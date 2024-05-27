@@ -1,39 +1,32 @@
 {
-    "roles":
-    {
-        "usuarioAutenticado" : "usuarioAutenticado",
-        "externalUser"  : "externalUser",
-        "internalUser"  : "internalUser"
-    },
+  "roles": {
+    "usuarioAutenticado": "usuarioAutenticado",
+    "externalUser": "externalUser",
+    "internalUser": "internalUser"
+  },
 
-    "apiLogs":
-    {
-        "url": "http://localhost:5001/api/logs/",
-        "authorization": ""
-    },
-    "apiUserLook":
-    {
-        "url": "http://localhost:3001/api/userLook/",
-        "authorization": ""
-    },
-    "apiAccesControl":
-    {
-        "url": "http://localhost:3002/api/accessControl/",
-        "authorization": ""
-    },
-    "tipo_accesos":
-    {
-        "tipo_credenciales": "TIPO_AS_CREDENCIALES",
-        "tipo_biometrico": "TIPO_AS_BIOMETRICO",
-        "tipo_pin": "TIPO_AS_PIN"
-    },
-    "apiOtp":
-    {
-        "url": "http://localhost:3003/api/otp/",
-        "autorizacion": ""        
-    },
-    "variables": 
-    {
-        "cifrado": false
-    }
+  "apiLogs": {
+    "url": "http://localhost:5001/api/logs/",
+    "authorization": ""
+  },
+  "apiUserLook": {
+    "url": "http://localhost:3001/api/userLook/",
+    "authorization": ""
+  },
+  "apiAccesControl": {
+    "url": "http://localhost:3002/api/accessControl/",
+    "authorization": ""
+  },
+  "tipo_accesos": {
+    "tipo_credenciales": "TIPO_AS_CREDENCIALES",
+    "tipo_biometrico": "TIPO_AS_BIOMETRICO",
+    "tipo_pin": "TIPO_AS_PIN"
+  },
+  "apiOtp": {
+    "url": "http://localhost:3003/api/otp/",
+    "autorizacion": ""
+  },
+  "variables": {
+    "cifrado": false
+  }
 }
