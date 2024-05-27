@@ -23,9 +23,7 @@ export class ConnectionDB {
     });
 
     try {
-      const sql_param = `select servicio_id, entidad_id, case habilitado when 1 then true else false end habilitado, nom_grupo, nom_unico, valor, valor_2, descripcion, id_param 
-                             from parametros_institucion join parametros on id_param = param_id 
-                             where nom_grupo in ('POLITICAS', 'OTP_CONFIRMACION');`;
+      const sql_param = `select servicio_id, entidad_id, case habilitado when 1 then true else false end habilitado, nom_grupo, nom_unico, valor, valor_2, descripcion, id_param from parametros_institucion join parametros on id_param = param_id where nom_grupo in ('POLITICAS', 'OTP_CONFIRMACION');`;
       const cliente = await this.getConnection();
       const [rows, fields] = await cliente.query(sql_param);
       cliente.release();
