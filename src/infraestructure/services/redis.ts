@@ -52,6 +52,20 @@ export class RedisService implements OnModuleInit {
       return null;
     }
   }
+  private isValidIP4(str: string) {
+    const blocks = str.split('.');
+    if (blocks.length != 4) return false;
+    for (const i in blocks) {
+      if (
+        !/^\d+$/g.test(blocks[i]) ||
+        +blocks[i] > 255 ||
+        +blocks[i] < 0 ||
+        /^[0][0-9]{1,2}/.test(blocks[i])
+      )
+        return false;
+    }
+    return true;
+  }
 
   private async handleDataFetch() {
     try {
@@ -65,21 +79,18 @@ export class RedisService implements OnModuleInit {
         'string',
       );
 
-      // TODO: Ver si actualizar o no el cursor
-      this.cursor = nextCursor;
-
       for (const key of keys) {
         const value = await this.client.get(key);
 
-        // if (!value) {
-        //   this.logger.error(`Error fetching value for ${key}`);
-        //   continue;
-        // }
+        if (!this.isValidIP4(value)) {
+          await this.client.del(key); // Eliminar la clave de Redis después
+          continue;
+        }
 
         const data = await this.fetchIPInfo(value);
 
         if (data === null) {
-          //await this.client.del(key); // Eliminar la clave de Redis después
+          await this.client.del(key); // Eliminar la clave de Redis después
           continue;
         }
 
@@ -100,7 +111,7 @@ export class RedisService implements OnModuleInit {
         };
         await this.connectionDB.saveToDatabase(newData);
 
-        //await this.client.del(key); // Eliminar la clave de Redis después
+        await this.client.del(key); // Eliminar la clave de Redis después
       }
     } catch (error) {
       this.logger.error(`Error handling data fetch: ${error.message}`);
