@@ -31,40 +31,6 @@ export class RedisService implements OnModuleInit {
     this.handleDataFetch();
   }
 
-  private async saveToDatabase(data: any) {
-    const connection = await this.connectionDB.getConnection();
-    try {
-      const [rows]: any[] = await connection.query(
-        `SELECT ip_address, creation_datetime FROM GeoData WHERE ip_address = ?`,
-        [data.ip],
-      );
-      if (rows.length === 0) {
-        await connection.query(
-          `INSERT INTO GeoData (ip_address, country, countryCode, region, regionName, city, zip, latitud, longitud, timezone, isp, org, proveedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            data.ip,
-            data.country,
-            data.countryCode,
-            data.region,
-            data.regionName,
-            data.city,
-            data.zip,
-            data.lat,
-            data.lon,
-            data.timezone,
-            data.isp,
-            data.org,
-            data.proveedor,
-          ],
-        );
-      } else {
-        this.logger.log(`IP ${data.ip} already exists in the database.`);
-      }
-    } finally {
-      connection.release();
-    }
-  }
-
   private async fetchIPInfo(ip: string) {
     try {
       const response = await axios.get(
@@ -114,7 +80,7 @@ export class RedisService implements OnModuleInit {
               org: data.org,
               proveedor: data.as,
             };
-            await this.saveToDatabase(newData);
+            await this.connectionDB.saveToDatabase(newData);
           }
 
           //await this.client.del(key); // Eliminar la clave de Redis después
