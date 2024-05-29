@@ -13,7 +13,7 @@ export class ConnectionDB {
   }
 
   private async connect() {
-    this.pool = await mysql.createPool({
+    this.pool = mysql.createPool({
       user: process.env.USER_DB,
       host: process.env.HOST_DB,
       database: process.env.NAME_DB,
@@ -21,16 +21,6 @@ export class ConnectionDB {
       port: parseInt(process.env.PORT_DB) || 3600,
       connectionLimit: 50,
     });
-
-    try {
-      const sql_param = `select servicio_id, entidad_id, case habilitado when 1 then true else false end habilitado, nom_grupo, nom_unico, valor, valor_2, descripcion, id_param from parametros_institucion join parametros on id_param = param_id where nom_grupo in ('POLITICAS', 'OTP_CONFIRMACION');`;
-      const cliente = await this.getConnection();
-      const [rows, fields] = await cliente.query(sql_param);
-      cliente.release();
-      this.parametros = await ConnectionDB.getResultDB(rows);
-    } catch (error) {
-      console.log('Error al traer parametros ' + error);
-    }
   }
 
   // abrir una unica conexion a mysql, patron singleton(no abre y cierra conexiones cada que se realiza una consulta)
