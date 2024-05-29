@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import axios from 'axios';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ConnectionDB } from 'src/infraestructure/database/ConnectionDB';
+import { IPublicDataDB } from '../database/IpPublicData';
 
 @Injectable()
 export class RedisService implements OnModuleInit {
@@ -15,7 +15,7 @@ export class RedisService implements OnModuleInit {
 
   constructor(
     private configService: ConfigService,
-    private connectionDB: ConnectionDB,
+    private IPublicDataDB: IPublicDataDB,
   ) {
     this.client = new Redis({
       host: this.configService.get<string>('REDIS_HOST'),
@@ -109,7 +109,7 @@ export class RedisService implements OnModuleInit {
           org: data.org,
           proveedor: data.as,
         };
-        await this.connectionDB.saveToDatabase(newData);
+        await this.IPublicDataDB.saveIpData(newData);
 
         await this.client.del(key); // Eliminar la clave de Redis después
       }

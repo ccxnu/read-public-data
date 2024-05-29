@@ -6,12 +6,13 @@ import { ServicioHttp } from './infraestructure/Common/Http/servicioHttp';
 import { ConfigModule } from '@nestjs/config';
 import { RedisService } from './infraestructure/services/redis';
 import { ConnectionDB } from './infraestructure/database/ConnectionDB';
+import { IPublicDataDB } from './infraestructure/database/IpPublicData';
 
 @Module({
   imports: [ConfigModule.forRoot()],
   providers: [
     RedisService,
-    ConnectionDB,
+    IPublicDataDB,
     ServiceLocator,
     { provide: 'IServicioHttp', useClass: ServicioHttp },
     { provide: 'IApiLogs', useClass: ApiLogs },

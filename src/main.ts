@@ -4,7 +4,7 @@ import { AllExceptionsFilter } from './interface/filters/AllExceptionsFilter';
 import { HttpExceptionFilter } from './interface/filters/HttpExceptionFilter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule);
 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
