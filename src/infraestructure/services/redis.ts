@@ -10,6 +10,8 @@ export class RedisService implements OnModuleInit {
   private client: Redis;
   private pollInterval: number;
   private cursor: string;
+  private totalKeys: string;
+  private matchPattern: string;
 
   constructor(
     private configService: ConfigService,
@@ -24,6 +26,8 @@ export class RedisService implements OnModuleInit {
       10,
     );
 
+    this.totalKeys = this.configService.get<string>('TOTAL_KEYS');
+    this.matchPattern = this.configService.get<string>('MATCH_PATTERN');
     this.cursor = '0';
   }
 
@@ -36,6 +40,12 @@ export class RedisService implements OnModuleInit {
       const response = await axios.get(
         `${this.configService.get<string>('IP_API_URL')}/${ip}`,
       );
+      if (response.data.status === 'fail') {
+        this.logger.error(
+          `Error fetching info for ${ip}: ${response.data.message}`,
+        );
+        return null;
+      }
       return response.data;
     } catch (error) {
       this.logger.error(`Error fetching IP info for ${ip}: ${error.message}`);
@@ -44,47 +54,53 @@ export class RedisService implements OnModuleInit {
   }
 
   private async handleDataFetch() {
-    const TOTAL_KEYS = '50';
-    const MATCH_PATTERN = 'ipPublic_*';
-
     try {
       const [nextCursor, keys] = await this.client.scan(
         this.cursor,
         'MATCH',
-        MATCH_PATTERN,
+        this.matchPattern,
         'COUNT',
-        TOTAL_KEYS,
+        this.totalKeys,
         'TYPE',
         'string',
       );
 
+      // TODO: Ver si actualizar o no el cursor
       this.cursor = nextCursor;
 
       for (const key of keys) {
         const value = await this.client.get(key);
-        if (value) {
-          const data = await this.fetchIPInfo(value);
-          if (data) {
-            const newData = {
-              ip: value,
-              country: data.country,
-              countryCode: data.countryCode,
-              region: data.region,
-              regionName: data.regionName,
-              city: data.city,
-              zip: data.zip,
-              lat: data.lat,
-              lon: data.lon,
-              timezone: data.timezone,
-              isp: data.isp,
-              org: data.org,
-              proveedor: data.as,
-            };
-            await this.connectionDB.saveToDatabase(newData);
-          }
 
+        // if (!value) {
+        //   this.logger.error(`Error fetching value for ${key}`);
+        //   continue;
+        // }
+
+        const data = await this.fetchIPInfo(value);
+
+        if (data === null) {
           //await this.client.del(key); // Eliminar la clave de Redis después
+          continue;
         }
+
+        const newData = {
+          ip: value,
+          country: data.country,
+          countryCode: data.countryCode,
+          region: data.region,
+          regionName: data.regionName,
+          city: data.city,
+          zip: data.zip,
+          lat: data.lat,
+          lon: data.lon,
+          timezone: data.timezone,
+          isp: data.isp,
+          org: data.org,
+          proveedor: data.as,
+        };
+        await this.connectionDB.saveToDatabase(newData);
+
+        //await this.client.del(key); // Eliminar la clave de Redis después
       }
     } catch (error) {
       this.logger.error(`Error handling data fetch: ${error.message}`);
