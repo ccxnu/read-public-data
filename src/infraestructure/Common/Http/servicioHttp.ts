@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as axios from 'axios';
-import { solicitarServicio } from '../Model/solicitarServicio';
+import { SolicitarServicio } from '../Model/solicitarServicio';
 import { IServicioHttp } from './IServicioHttp';
 
 @Injectable()
 export class ServicioHttp implements IServicioHttp {
-  async solicitarServicio(solicitar: solicitarServicio): Promise<any> {
+  async solicitarServicio(solicitar: SolicitarServicio): Promise<any> {
     let respuesta: any = {};
 
     const req = {
@@ -26,13 +26,14 @@ export class ServicioHttp implements IServicioHttp {
     return respuesta;
   }
 
-  private async addHeader(solicitar: solicitarServicio) {
+  private async addHeader(solicitar: SolicitarServicio) {
     const headers = {};
 
-    if (
-      solicitar.header_adicionales != undefined &&
-      solicitar.header_adicionales != null
-    ) {
+    if (solicitar.key_autorizacion && solicitar.value_autorizacion) {
+      headers[solicitar.key_autorizacion] = solicitar.value_autorizacion;
+    }
+
+    if (solicitar.header_adicionales) {
       solicitar.header_adicionales.forEach((e) => {
         if (e.value != null && e.value != '') {
           headers[e.key] = e.value;
