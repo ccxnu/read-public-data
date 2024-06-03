@@ -1,22 +1,21 @@
 import { Module } from '@nestjs/common';
-import { ServiceLocator } from './application/common/utils/serviceLocator';
-import { ApiLogs } from './infraestructure/apis/apiLogs';
 import { ServicioHttp } from './infraestructure/Common/Http/servicioHttp';
-//import { InternalServicesController } from './interface/controller/internalServices.controller';
 import { ConfigModule } from '@nestjs/config';
 import { RedisService } from './infraestructure/services/redis';
-import { ConnectionDB } from './infraestructure/database/ConnectionDB';
-import { IPublicDataDB } from './infraestructure/database/IpPublicData';
+import { IpDataDB } from './infraestructure/database/IpDataDB';
+import { ApiIpData } from './infraestructure/apis/apiIpData';
 
 @Module({
-  imports: [ConfigModule.forRoot()],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
   providers: [
     RedisService,
-    IPublicDataDB,
-    ServiceLocator,
+    IpDataDB,
+    ApiIpData,
     { provide: 'IServicioHttp', useClass: ServicioHttp },
-    { provide: 'IApiLogs', useClass: ApiLogs },
   ],
-  //controllers: [InternalServicesController],
 })
 export class AppModule {}

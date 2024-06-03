@@ -1,32 +1,29 @@
 import Redis from 'ioredis';
-import axios from 'axios';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { IPublicDataDB } from '../database/IpPublicData';
+import isValidIP4 from 'src/application/common/utils/validateIp4';
+import { IpDataDB } from '../database/IpDataDB';
+import { ApiIpData } from '../apis/apiIpData';
 
 @Injectable()
 export class RedisService implements OnModuleInit {
   private readonly logger = new Logger(RedisService.name);
-  private client: Redis;
   private pollInterval: number;
   private cursor: string;
-  private totalKeys: string;
+  private totalKeys: number;
   private matchPattern: string;
 
   constructor(
     private configService: ConfigService,
-    private IPublicDataDB: IPublicDataDB,
+    private ipDataDB: IpDataDB,
+    private apiIpData: ApiIpData,
   ) {
-    this.client = new Redis({
-      host: this.configService.get<string>('REDIS_HOST'),
-      port: parseInt(this.configService.get<string>('REDIS_PORT'), 10),
-    });
     this.pollInterval = parseInt(
       this.configService.get<string>('POLL_INTERVAL'),
       10,
     );
 
-    this.totalKeys = this.configService.get<string>('TOTAL_KEYS');
+    this.totalKeys = parseInt(this.configService.get<string>('TOTAL_KEYS'), 10); // Convertir a número
     this.matchPattern = this.configService.get<string>('MATCH_PATTERN');
     this.cursor = '0';
   }
@@ -35,41 +32,13 @@ export class RedisService implements OnModuleInit {
     this.handleDataFetch();
   }
 
-  private async fetchIPInfo(ip: string) {
-    try {
-      const response = await axios.get(
-        `${this.configService.get<string>('IP_API_URL')}/${ip}`,
-      );
-      if (response.data.status === 'fail') {
-        this.logger.error(
-          `Error fetching info for ${ip}: ${response.data.message}`,
-        );
-        return null;
-      }
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Error fetching IP info for ${ip}: ${error.message}`);
-      return null;
-    }
-  }
-  private isValidIP4(str: string) {
-    const blocks = str.split('.');
-    if (blocks.length != 4) return false;
-    for (const i in blocks) {
-      if (
-        !/^\d+$/g.test(blocks[i]) ||
-        +blocks[i] > 255 ||
-        +blocks[i] < 0 ||
-        /^[0][0-9]{1,2}/.test(blocks[i])
-      )
-        return false;
-    }
-    return true;
-  }
-
   private async handleDataFetch() {
+    const client = new Redis({
+      host: this.configService.get<string>('REDIS_HOST'),
+      port: parseInt(this.configService.get<string>('REDIS_PORT'), 10),
+    });
     try {
-      const [nextCursor, keys] = await this.client.scan(
+      const [nextCursor, keys] = await client.scan(
         this.cursor,
         'MATCH',
         this.matchPattern,
@@ -80,19 +49,13 @@ export class RedisService implements OnModuleInit {
       );
 
       for (const key of keys) {
-        const value = await this.client.get(key);
+        const value = await client.get(key);
 
-        if (!this.isValidIP4(value)) {
-          await this.client.del(key); // Eliminar la clave de Redis después
-          continue;
-        }
+        if (!isValidIP4(value)) continue; // Continuar si la clave no es ip4
 
-        const data = await this.fetchIPInfo(value);
+        const data = await this.apiIpData.fetchIpApi(key);
 
-        if (data === null) {
-          await this.client.del(key); // Eliminar la clave de Redis después
-          continue;
-        }
+        if (data === null) continue;
 
         const newData = {
           ip: value,
@@ -109,13 +72,19 @@ export class RedisService implements OnModuleInit {
           org: data.org,
           proveedor: data.as,
         };
-        await this.IPublicDataDB.saveIpData(newData);
+        await this.ipDataDB.saveIpData(newData);
 
-        await this.client.del(key); // Eliminar la clave de Redis después
+        await client.del(key); // Eliminar la clave de Redis
+
+        // Hacer que espere 1ms para evitar que la fetchIpApi se bloquee
+        await new Promise((resolve) => setTimeout(resolve, 1));
       }
+
+      this.cursor = nextCursor; // Actualizar el cursor
     } catch (error) {
       this.logger.error(`Error handling data fetch: ${error.message}`);
     } finally {
+      await client.quit(); // Cerrar la conexión de Redis
       setTimeout(() => this.handleDataFetch(), this.pollInterval); // Tiempo
     }
   }

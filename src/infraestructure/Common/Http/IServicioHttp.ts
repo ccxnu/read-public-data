@@ -1,5 +1,5 @@
-import { solicitarServicio } from '../Model/solicitarServicio';
+import { SolicitarServicio } from '../Model/solicitarServicio';
 
 export interface IServicioHttp {
-  solicitarServicio(solicitar: solicitarServicio): Promise<any>;
+  solicitarServicio(solicitar: SolicitarServicio): Promise<any>;
 }

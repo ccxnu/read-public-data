@@ -1,14 +1,33 @@
+import { Injectable } from '@nestjs/common';
 import { ConnectionDB } from './ConnectionDB';
 
-export class IPublicDataDB {
-  public async saveIpData(data: any) {
+@Injectable()
+export class IpDataDB {
+  async getIpData(ip: string) {
     const connection = await ConnectionDB.getInstance().getConnection();
     try {
       const [rows]: any[] = await connection.query(
-        `SELECT ip, creation_datetime FROM GeoData WHERE ip = ?`,
-        [data.ip],
+        `SELECT ip FROM GeoData WHERE ip = ?`,
+        [ip],
       );
+
       if (rows.length === 0) {
+        return null;
+      }
+
+      return rows[0];
+    } catch (error) {
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async saveIpData(data: any) {
+    const connection = await ConnectionDB.getInstance().getConnection();
+    try {
+      const rows = await this.getIpData(data.ip);
+      if (rows === null) {
         await connection.query(
           `INSERT INTO GeoData (ip, country, countryCode, region, regionName, city, zip, latitud, longitud, timezone, isp, org, proveedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
@@ -31,7 +50,7 @@ export class IPublicDataDB {
         console.log(`IP ${data.ip} already exists in the database.`); // Development
       }
     } catch (error) {
-      throw new Error(error);
+      throw error;
     } finally {
       connection.release();
     }
