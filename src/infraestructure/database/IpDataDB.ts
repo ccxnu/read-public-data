@@ -29,7 +29,10 @@ export class IpDataDB {
       const rows = await this.getIpData(data.ip);
       if (rows === null) {
         await connection.query(
-          `INSERT INTO GeoData (ip, country, countryCode, region, regionName, city, zip, latitud, longitud, timezone, isp, org, proveedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO GeoData (ip, country, countryCode, region, regionName,
+                                city, zip, latitud, longitud, timezone, isp,
+                                org, proveedor, userAgent) VALUES
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             data.ip,
             data.country,
@@ -44,6 +47,7 @@ export class IpDataDB {
             data.isp,
             data.org,
             data.proveedor,
+            data.userAgent,
           ],
         );
       } else {

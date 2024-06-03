@@ -49,16 +49,16 @@ export class RedisService implements OnModuleInit {
       );
 
       for (const key of keys) {
-        const value = await client.get(key);
+        const value = JSON.parse(await client.get(key));
 
-        if (!isValidIP4(value)) continue; // Continuar si la clave no es ip4
+        if (!isValidIP4(value.ip)) continue; // Continuar si la clave no es ip4
 
-        const data = await this.apiIpData.fetchIpApi(key);
+        const data = await this.apiIpData.fetchIpApi(value.ip);
 
         if (data === null) continue;
 
         const newData = {
-          ip: value,
+          ip: value.ip,
           country: data.country,
           countryCode: data.countryCode,
           region: data.region,
@@ -71,12 +71,14 @@ export class RedisService implements OnModuleInit {
           isp: data.isp,
           org: data.org,
           proveedor: data.as,
+          userAgent: value.userAgent,
         };
+
         await this.ipDataDB.saveIpData(newData);
 
         await client.del(key); // Eliminar la clave de Redis
 
-        // Hacer que espere 1ms para evitar que la fetchIpApi se bloquee
+        // Hacer que espere 1ms para evitar que Redis se bloquee
         await new Promise((resolve) => setTimeout(resolve, 1));
       }
 
